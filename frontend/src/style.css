@@ -1,0 +1,42 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: #0d0d0d;
+  color: #e8e8e8;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #444; }
+
+input, textarea { user-select: text; }
+
+@keyframes flash {
+  0% { color: #ffffff; }
+  100% { color: inherit; }
+}
+@keyframes rowIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.flash { animation: flash 400ms ease-out forwards; }
+.row-in { animation: rowIn 150ms ease-out forwards; }
+@keyframes pulse-border {
+  0%, 100% { border-color: rgb(29 78 216); }
+  50% { border-color: rgb(96 165 250); }
+}
+.pulse-border { animation: pulse-border 1.5s ease-in-out infinite; }

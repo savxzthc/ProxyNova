@@ -1,0 +1,15 @@
+* text=auto eol=lf
+
+*.go text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.js text eol=lf
+
+*.png binary
+*.ico binary
+*.woff2 binary
+*.mmdb binary
