@@ -47,7 +47,7 @@ export default function CheckerPanel() {
       judges,
       shuffle: false,
       retryCount: 0,
-    })
+    } as any)
   }, [proxies, threads, timeout, protocols, judges, setCheckerWarning])
 
   const handleStop = useCallback(() => {
