@@ -91,13 +91,13 @@ export default function ScraperPanel() {
   const handleToggle = async (id: string) => {
     const updated = sources.map(s => s.id === id ? { ...s, active: !s.active } : s)
     setSources(updated)
-    await SaveSources(updated)
+    await SaveSources(updated as any)
   }
 
   const handleAddSource = async (src: ScrapeSource) => {
     const updated = [...sources, src]
     setSources(updated)
-    await SaveSources(updated)
+    await SaveSources(updated as any)
     setShowAdd(false)
   }
 
