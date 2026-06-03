@@ -2,6 +2,7 @@ package core
 
 import (
 	"encoding/json"
+	"errors"
 
 	bolt "go.etcd.io/bbolt"
 )
@@ -14,6 +15,7 @@ var (
 	bucketSettings = []byte("settings")
 	bucketJudges   = []byte("judges")
 	bucketSources  = []byte("sources")
+	ErrNotFound    = errors.New("not found")
 )
 
 func NewStore(path string) (*Store, error) {
@@ -97,9 +99,13 @@ func (s *Store) putJSON(bucket, key []byte, v interface{}) error {
 
 func (s *Store) getJSON(bucket, key []byte, v interface{}) error {
 	return s.db.View(func(tx *bolt.Tx) error {
-		data := tx.Bucket(bucket).Get(key)
-		if data == nil {
+		b := tx.Bucket(bucket)
+		if b == nil {
 			return bolt.ErrBucketNotFound
+		}
+		data := b.Get(key)
+		if data == nil {
+			return ErrNotFound
 		}
 		return json.Unmarshal(data, v)
 	})

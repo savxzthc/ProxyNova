@@ -13,6 +13,7 @@ interface AppStore {
   judges: Judge[]
   settings: AppSettings
   myIP: string
+  checkerWarning: string
 
   setActivePanel: (panel: string) => void
   addResults: (results: Result[]) => void
@@ -27,6 +28,7 @@ interface AppStore {
   setJudges: (judges: Judge[]) => void
   setSettings: (s: AppSettings) => void
   setMyIP: (ip: string) => void
+  setCheckerWarning: (warning: string) => void
 }
 
 const defaultSettings: AppSettings = {
@@ -51,6 +53,7 @@ export const useAppStore = create<AppStore>((set) => ({
   judges: [],
   settings: defaultSettings,
   myIP: '',
+  checkerWarning: '',
 
   setActivePanel: (panel) => set({ activePanel: panel }),
 
@@ -81,4 +84,6 @@ export const useAppStore = create<AppStore>((set) => ({
   setSettings: (s) => set({ settings: s }),
 
   setMyIP: (ip) => set({ myIP: ip }),
+
+  setCheckerWarning: (warning) => set({ checkerWarning: warning }),
 }))

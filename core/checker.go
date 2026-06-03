@@ -19,13 +19,13 @@ type CheckConfig struct {
 }
 
 type CheckProgress struct {
-	Total       int                `json:"total"`
-	Checked     int                `json:"checked"`
-	Alive       int                `json:"alive"`
-	Dead        int                `json:"dead"`
-	PerProtocol map[string]int     `json:"perProtocol"`
-	ElapsedMs   int64              `json:"elapsedMs"`
-	RatePerSec  float64            `json:"ratePerSec"`
+	Total       int            `json:"total"`
+	Checked     int            `json:"checked"`
+	Alive       int            `json:"alive"`
+	Dead        int            `json:"dead"`
+	PerProtocol map[string]int `json:"perProtocol"`
+	ElapsedMs   int64          `json:"elapsedMs"`
+	RatePerSec  float64        `json:"ratePerSec"`
 }
 
 type Result struct {
@@ -67,17 +67,19 @@ type CheckerCallbacks struct {
 }
 
 type Checker struct {
-	mu       sync.Mutex
-	running  bool
-	stopCh   chan struct{}
-	wg       sync.WaitGroup
-	realIP   string
+	mu      sync.Mutex
+	running bool
+	stopCh  chan struct{}
+	doneCh  chan struct{}
+	wg      sync.WaitGroup
+	realIP  string
 
 	total    int64
 	checked  int64
 	alive    int64
 	dead     int64
-	perProto sync.Map
+	perProto map[string]int
+	protoMu  sync.Mutex
 
 	recentChecked []int64
 	recentMu      sync.Mutex
@@ -95,12 +97,18 @@ func (c *Checker) Start(proxies []Proxy, cfg CheckConfig, cbs CheckerCallbacks) 
 	}
 	c.running = true
 	c.stopCh = make(chan struct{})
+	c.doneCh = make(chan struct{})
 
 	atomic.StoreInt64(&c.total, int64(len(proxies)))
 	atomic.StoreInt64(&c.checked, 0)
 	atomic.StoreInt64(&c.alive, 0)
 	atomic.StoreInt64(&c.dead, 0)
-	c.perProto = sync.Map{}
+	c.protoMu.Lock()
+	c.perProto = make(map[string]int)
+	c.protoMu.Unlock()
+	c.recentMu.Lock()
+	c.recentChecked = nil
+	c.recentMu.Unlock()
 
 	if cfg.Shuffle {
 		rand.Shuffle(len(proxies), func(i, j int) { proxies[i], proxies[j] = proxies[j], proxies[i] })
@@ -109,6 +117,9 @@ func (c *Checker) Start(proxies []Proxy, cfg CheckConfig, cbs CheckerCallbacks) 
 	threads := cfg.Threads
 	if threads < 1 {
 		threads = 100
+	}
+	if threads > 2000 {
+		threads = 2000
 	}
 
 	work := make(chan Proxy, threads*2)
@@ -140,7 +151,7 @@ func (c *Checker) Start(proxies []Proxy, cfg CheckConfig, cbs CheckerCallbacks) 
 				atomic.AddInt64(&c.checked, 1)
 				if result.Alive {
 					atomic.AddInt64(&c.alive, 1)
-					c.perProto.Store(result.Protocol, c.protoCount(result.Protocol)+1)
+					c.incrementProto(result.Protocol)
 				} else {
 					atomic.AddInt64(&c.dead, 1)
 				}
@@ -153,7 +164,11 @@ func (c *Checker) Start(proxies []Proxy, cfg CheckConfig, cbs CheckerCallbacks) 
 				for start < len(c.recentChecked) && c.recentChecked[start] < cutoff {
 					start++
 				}
-				c.recentChecked = c.recentChecked[start:]
+				if start > 0 {
+					tmp := make([]int64, len(c.recentChecked)-start)
+					copy(tmp, c.recentChecked[start:])
+					c.recentChecked = tmp
+				}
 				c.recentMu.Unlock()
 
 				if cbs.OnResult != nil {
@@ -177,6 +192,7 @@ func (c *Checker) Start(proxies []Proxy, cfg CheckConfig, cbs CheckerCallbacks) 
 				c.mu.Lock()
 				c.running = false
 				c.mu.Unlock()
+				close(c.doneCh)
 				return
 			case <-ticker.C:
 				if cbs.OnProgress != nil {
@@ -209,6 +225,25 @@ func (c *Checker) Stop() {
 	}
 }
 
+func (c *Checker) WaitForStop() {
+	c.mu.Lock()
+	if !c.running {
+		c.mu.Unlock()
+		return
+	}
+	stopCh := c.stopCh
+	doneCh := c.doneCh
+	c.mu.Unlock()
+
+	if stopCh != nil {
+		<-stopCh
+	}
+	c.wg.Wait()
+	if doneCh != nil {
+		<-doneCh
+	}
+}
+
 func (c *Checker) IsRunning() bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -217,10 +252,11 @@ func (c *Checker) IsRunning() bool {
 
 func (c *Checker) buildProgress(startTime time.Time) CheckProgress {
 	pp := make(map[string]int)
-	c.perProto.Range(func(k, v interface{}) bool {
-		pp[k.(string)] = v.(int)
-		return true
-	})
+	c.protoMu.Lock()
+	for proto, count := range c.perProto {
+		pp[proto] = count
+	}
+	c.protoMu.Unlock()
 
 	c.recentMu.Lock()
 	rate := float64(len(c.recentChecked)) / 2.0
@@ -237,11 +273,16 @@ func (c *Checker) buildProgress(startTime time.Time) CheckProgress {
 	}
 }
 
-func (c *Checker) protoCount(proto string) int {
-	if v, ok := c.perProto.Load(proto); ok {
-		return v.(int)
-	}
-	return 0
+func (c *Checker) incrementProto(proto string) {
+	c.protoMu.Lock()
+	c.perProto[proto]++
+	c.protoMu.Unlock()
+}
+
+func (c *Checker) SetRealIP(realIP string) {
+	c.mu.Lock()
+	c.realIP = realIP
+	c.mu.Unlock()
 }
 
 func (c *Checker) checkProxy(p Proxy, cfg CheckConfig) Result {

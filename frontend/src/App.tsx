@@ -25,6 +25,7 @@ export default function App() {
     setScraping,
     updateScrapeStatus,
     setScrapedProxies,
+    setCheckerWarning,
   } = useAppStore()
 
   useEffect(() => {
@@ -37,7 +38,7 @@ export default function App() {
       }
     )
 
-    const events = ['checker:progress', 'checker:result', 'checker:done', 'scraper:progress', 'scraper:done']
+    const events = ['checker:progress', 'checker:result', 'checker:done', 'checker:warn', 'scraper:progress', 'scraper:done']
 
     EventsOn('checker:progress', (p: CheckProgress) => {
       setChecking(true)
@@ -49,6 +50,9 @@ export default function App() {
     EventsOn('checker:done', (p: CheckProgress) => {
       setChecking(false)
       setProgress(p)
+    })
+    EventsOn('checker:warn', (message: string) => {
+      setCheckerWarning(message)
     })
     EventsOn('scraper:progress', (p: ScrapeProgress) => {
       setScraping(true)

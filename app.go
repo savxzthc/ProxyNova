@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -23,10 +25,17 @@ type App struct {
 	results []core.Result
 	mu      sync.RWMutex
 	realIP  string
+
+	pathMu           sync.Mutex
+	allowedReadFiles map[string]struct{}
+	allowedSavePaths map[string]struct{}
 }
 
 func NewApp() *App {
-	return &App{}
+	return &App{
+		allowedReadFiles: make(map[string]struct{}),
+		allowedSavePaths: make(map[string]struct{}),
+	}
 }
 
 func (a *App) startup(ctx context.Context) {
@@ -91,8 +100,16 @@ func (a *App) StartChecking(proxyStrings []string, cfg core.CheckConfig) error {
 	}
 	if a.checker.IsRunning() {
 		a.checker.Stop()
-		time.Sleep(200 * time.Millisecond)
+		a.checker.WaitForStop()
 	}
+
+	if a.realIP == "" {
+		a.realIP = a.fetchRealIP()
+		if a.realIP == "" {
+			runtime.EventsEmit(a.ctx, "checker:warn", "Could not determine real IP — anonymity grading may be inaccurate")
+		}
+	}
+	a.checker.SetRealIP(a.realIP)
 
 	proxies := make([]core.Proxy, 0, len(proxyStrings))
 	for _, s := range proxyStrings {
@@ -111,6 +128,9 @@ func (a *App) StartChecking(proxyStrings []string, cfg core.CheckConfig) error {
 	}
 	if cfg.Threads <= 0 {
 		cfg.Threads = 200
+	}
+	if cfg.Threads > 2000 {
+		cfg.Threads = 2000
 	}
 	if len(cfg.Judges) == 0 && a.store != nil {
 		judges, _ := a.store.LoadJudges()
@@ -237,6 +257,14 @@ func (a *App) ClearResults() {
 }
 
 func (a *App) ExportResults(format string, filter core.ResultFilter, outputPath string) error {
+	if err := a.validateSelectedSavePath(outputPath); err != nil {
+		return err
+	}
+	clean, err := normalizePath(outputPath)
+	if err != nil {
+		return err
+	}
+
 	a.mu.RLock()
 	results := make([]core.Result, len(a.results))
 	copy(results, a.results)
@@ -257,7 +285,7 @@ func (a *App) ExportResults(format string, filter core.ResultFilter, outputPath 
 		AliveOnly: filter.AliveOnly,
 	}
 
-	return core.Export(filtered, core.ExportFormat(format), exportFilter, outputPath, txtFormat)
+	return core.Export(filtered, core.ExportFormat(format), exportFilter, clean, txtFormat)
 }
 
 func (a *App) GetJudges() []core.Judge {
@@ -300,7 +328,16 @@ func (a *App) GetIP() string {
 }
 
 func (a *App) ExportProxyList(proxies []string, outputPath string) error {
-	f, err := os.Create(outputPath)
+	if err := a.validateSelectedSavePath(outputPath); err != nil {
+		return err
+	}
+
+	clean, err := normalizePath(outputPath)
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Create(clean)
 	if err != nil {
 		return err
 	}
@@ -321,6 +358,9 @@ func (a *App) OpenFileDialog() string {
 			{DisplayName: "All files", Pattern: "*"},
 		},
 	})
+	if path != "" {
+		a.rememberReadPath(path)
+	}
 	return path
 }
 
@@ -334,11 +374,21 @@ func (a *App) OpenSaveDialog(filename string) string {
 			{DisplayName: "JSON files", Pattern: "*.json"},
 		},
 	})
+	if path != "" {
+		a.rememberSavePath(path)
+	}
 	return path
 }
 
 func (a *App) ReadFile(path string) (string, error) {
-	clean := filepath.Clean(path)
+	if err := a.validateSelectedReadPath(path); err != nil {
+		return "", err
+	}
+
+	clean, err := normalizePath(path)
+	if err != nil {
+		return "", err
+	}
 	data, err := os.ReadFile(clean)
 	if err != nil {
 		return "", err
@@ -356,4 +406,70 @@ func appDataPath(filename string) (string, error) {
 		return "", err
 	}
 	return filepath.Join(appDir, filename), nil
+}
+
+func (a *App) rememberReadPath(path string) {
+	clean, err := normalizePath(path)
+	if err != nil {
+		return
+	}
+	a.pathMu.Lock()
+	a.allowedReadFiles[pathKey(clean)] = struct{}{}
+	a.pathMu.Unlock()
+}
+
+func (a *App) rememberSavePath(path string) {
+	clean, err := normalizePath(path)
+	if err != nil {
+		return
+	}
+	a.pathMu.Lock()
+	a.allowedSavePaths[pathKey(clean)] = struct{}{}
+	a.pathMu.Unlock()
+}
+
+func (a *App) validateSelectedReadPath(path string) error {
+	clean, err := normalizePath(path)
+	if err != nil {
+		return err
+	}
+	a.pathMu.Lock()
+	_, ok := a.allowedReadFiles[pathKey(clean)]
+	a.pathMu.Unlock()
+	if !ok {
+		return errors.New("file must be selected through OpenFileDialog")
+	}
+	return nil
+}
+
+func (a *App) validateSelectedSavePath(path string) error {
+	clean, err := normalizePath(path)
+	if err != nil {
+		return err
+	}
+	ext := strings.ToLower(filepath.Ext(clean))
+	if ext != ".txt" && ext != ".csv" && ext != ".json" {
+		return errors.New("export path must end in .txt, .csv, or .json")
+	}
+	a.pathMu.Lock()
+	_, ok := a.allowedSavePaths[pathKey(clean)]
+	a.pathMu.Unlock()
+	if !ok {
+		return errors.New("export path must be selected through OpenSaveDialog")
+	}
+	return nil
+}
+
+func normalizePath(path string) (string, error) {
+	if strings.TrimSpace(path) == "" {
+		return "", errors.New("path is empty")
+	}
+	return filepath.Abs(filepath.Clean(path))
+}
+
+func pathKey(path string) string {
+	if os.PathSeparator == '\\' {
+		return strings.ToLower(path)
+	}
+	return path
 }

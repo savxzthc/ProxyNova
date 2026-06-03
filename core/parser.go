@@ -122,10 +122,8 @@ func parseHostPort(host, portStr, protocol string) (Proxy, error) {
 		return Proxy{}, fmt.Errorf("invalid port: %s", portStr)
 	}
 	host = strings.TrimSpace(host)
-	if net.ParseIP(host) == nil {
-		if _, err := net.LookupHost(host); err != nil {
-			return Proxy{}, fmt.Errorf("invalid host: %s", host)
-		}
+	if host == "" {
+		return Proxy{}, fmt.Errorf("invalid host: %s", host)
 	}
 	return Proxy{
 		Host:     host,

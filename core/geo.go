@@ -16,27 +16,30 @@ type GeoInfo struct {
 }
 
 var (
-	geoReader  *geoip2.Reader
-	geoOnce    sync.Once
-	geoDBBytes []byte
+	geoMu     sync.RWMutex
+	geoReader *geoip2.Reader
 )
 
 func InitGeo(data []byte) {
-	geoDBBytes = data
-}
+	geoMu.Lock()
+	defer geoMu.Unlock()
 
-func getReader() *geoip2.Reader {
-	geoOnce.Do(func() {
-		if len(geoDBBytes) == 0 {
-			return
-		}
-		geoReader, _ = geoip2.FromBytes(geoDBBytes)
-	})
-	return geoReader
+	geoReader = nil
+	if len(data) == 0 {
+		return
+	}
+
+	reader, err := geoip2.FromBytes(data)
+	if err != nil {
+		return
+	}
+	geoReader = reader
 }
 
 func LookupIP(ipStr string) GeoInfo {
-	r := getReader()
+	geoMu.RLock()
+	r := geoReader
+	geoMu.RUnlock()
 	if r == nil {
 		return GeoInfo{}
 	}

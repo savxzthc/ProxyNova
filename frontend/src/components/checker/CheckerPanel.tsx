@@ -8,7 +8,16 @@ import LiveCounters from './LiveCounters'
 
 export default function CheckerPanel() {
   const MAX_PROXIES = 100_000
-  const { isChecking, progress, judges, settings, scrapedProxies, clearScrapedProxies } = useAppStore()
+  const {
+    isChecking,
+    progress,
+    judges,
+    settings,
+    scrapedProxies,
+    clearScrapedProxies,
+    checkerWarning,
+    setCheckerWarning,
+  } = useAppStore()
   const [proxies, setProxies] = useState<string[]>([])
 
   const handleSetProxies = (list: string[]) => {
@@ -30,6 +39,7 @@ export default function CheckerPanel() {
 
   const handleStart = useCallback(async () => {
     if (proxies.length === 0) return
+    setCheckerWarning('')
     await StartChecking(proxies, {
       threads,
       timeoutMs: timeout,
@@ -38,7 +48,7 @@ export default function CheckerPanel() {
       shuffle: false,
       retryCount: 0,
     })
-  }, [proxies, threads, timeout, protocols, judges])
+  }, [proxies, threads, timeout, protocols, judges, setCheckerWarning])
 
   const handleStop = useCallback(() => {
     StopChecking()
@@ -64,6 +74,12 @@ export default function CheckerPanel() {
 
       <div className="flex flex-col gap-4 p-5 overflow-y-auto flex-1">
         <InputArea proxies={proxies} onChange={handleSetProxies} externalText={loadedText} />
+
+        {checkerWarning && (
+          <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+            {checkerWarning}
+          </div>
+        )}
 
         <ProtocolToggles
           selected={protocols}
