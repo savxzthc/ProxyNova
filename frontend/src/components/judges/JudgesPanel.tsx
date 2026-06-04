@@ -54,7 +54,7 @@ export default function JudgesPanel() {
       <div className="flex flex-col items-center justify-center h-full gap-3">
         <IconGavel size={36} className="text-[#333]" />
         <span className="text-sm text-[#555]">Add a judge to get started</span>
-        <button onClick={handleAdd} className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
+        <button onClick={handleAdd} className="text-xs text-blue-400 hover:text-blue-300 transition-colors duration-150">
           + Add judge
         </button>
       </div>
@@ -64,10 +64,10 @@ export default function JudgesPanel() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex items-center gap-3 px-4 py-3 border-b border-[#2a2a2a] shrink-0">
-        <span className="text-sm text-[#888]">{judges.length} judges</span>
+        <span className="text-xs uppercase tracking-wider text-[#555]">{judges.length} judges</span>
         <button
           onClick={handleAdd}
-          className="flex items-center gap-1.5 ml-auto px-3 py-1.5 rounded bg-[#1c1c1c] border border-[#2a2a2a] text-xs text-[#888] hover:text-[#e8e8e8] transition-colors"
+          className="flex items-center gap-1.5 ml-auto px-3 py-1.5 rounded bg-[#1c1c1c] border border-[#2a2a2a] text-xs text-[#888] hover:text-[#e8e8e8] transition-colors duration-150"
         >
           <IconPlus size={12} />
           Add judge

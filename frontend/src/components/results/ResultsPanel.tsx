@@ -10,6 +10,7 @@ const defaultFilter: ResultFilter = {
   protocols: [],
   countries: [],
   anonymity: [],
+  maxLatencyMs: 0,
   aliveOnly: false,
   search: '',
 }
@@ -33,10 +34,13 @@ export default function ResultsPanel() {
       const s = new Set(filter.countries)
       r = r.filter(x => s.has(x.geo?.countryCode))
     }
+    if (filter.maxLatencyMs > 0) {
+      r = r.filter(x => x.alive && x.latencyMs <= filter.maxLatencyMs)
+    }
     if (filter.search) {
       const q = filter.search.toLowerCase()
       r = r.filter(x =>
-        `${x.host}:${x.port} ${x.protocol} ${x.geo?.countryName} ${x.geo?.isp}`.toLowerCase().includes(q)
+        `${x.host}:${x.port} ${x.protocol} ${x.geo?.countryName} ${x.geo?.countryCode} ${x.geo?.isp}`.toLowerCase().includes(q)
       )
     }
     return r
@@ -44,24 +48,24 @@ export default function ResultsPanel() {
 
   if (results.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-3">
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
         <IconTable size={36} className="text-[#333]" />
-        <span className="text-sm text-[#555]">No results yet. Start checking to see results here.</span>
+        <span className="text-sm text-[#555]">No results yet - load a proxy list and start checking.</span>
       </div>
     )
   }
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-[#2a2a2a] shrink-0">
-        <ResultsFilter filter={filter} onChange={setFilter} />
-        <div className="ml-auto flex items-center gap-3">
+      <div className="flex items-start gap-3 px-4 py-3 border-b border-[#2a2a2a] shrink-0">
+        <ResultsFilter filter={filter} results={results} onChange={setFilter} />
+        <div className="ml-auto flex items-center gap-3 shrink-0">
           <span className="text-xs text-[#555] font-mono">
             {filtered.length.toLocaleString()} / {results.length.toLocaleString()}
           </span>
           <button
             onClick={clearResults}
-            className="text-xs text-[#555] hover:text-red-400 transition-colors"
+            className="text-xs text-[#555] hover:text-red-400 transition-colors duration-150"
           >
             clear
           </button>

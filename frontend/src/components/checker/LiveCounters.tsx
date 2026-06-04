@@ -30,11 +30,12 @@ export default function LiveCounters({ progress, pct }: Props) {
   if (!progress) return null
 
   const pp = progress.perProtocol || {}
+  const running = progress.checked < progress.total
 
   return (
     <div className="rounded-lg border border-[#2a2a2a] bg-surface p-4 space-y-4">
       <div className="flex items-center gap-3 text-xs text-[#555]">
-        <div className="flex-1 bg-[#1c1c1c] rounded-full h-[2px] overflow-hidden">
+        <div className="flex-1 bg-[#1c1c1c] rounded-full h-[3px] overflow-hidden">
           <div
             className="h-full transition-all duration-300"
             style={{
@@ -61,9 +62,10 @@ export default function LiveCounters({ progress, pct }: Props) {
           { label: 'Rate', value: null, rate: progress.ratePerSec },
         ].map(({ label, value, color, rate }) => (
           <div key={label} className="flex flex-col gap-1">
-            <span className="text-xs text-[#555]">{label}</span>
+            <span className="text-xs uppercase tracking-wider text-[#555]">{label}</span>
             {rate !== undefined ? (
-              <span className="font-mono text-lg font-medium text-[#888]">
+              <span className="flex items-center gap-2 font-mono text-lg font-medium text-[#888]">
+                {running && <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />}
                 {rate.toFixed(0)}/s
               </span>
             ) : (
@@ -78,7 +80,7 @@ export default function LiveCounters({ progress, pct }: Props) {
       <div className="grid grid-cols-4 gap-4">
         {['http', 'https', 'socks4', 'socks5'].map((proto) => (
           <div key={proto} className="flex flex-col gap-1">
-            <span className="text-xs text-[#555]">{proto.toUpperCase()}</span>
+            <span className="text-xs uppercase tracking-wider text-[#555]">{proto.toUpperCase()}</span>
             <span className="font-mono text-sm text-[#888]">
               {(pp[proto] || 0).toLocaleString()}
             </span>

@@ -184,6 +184,7 @@ export namespace core {
 	    protocols: string[];
 	    countries: string[];
 	    anonymity: string[];
+	    maxLatencyMs: number;
 	    aliveOnly: boolean;
 	    search: string;
 	
@@ -196,6 +197,7 @@ export namespace core {
 	        this.protocols = source["protocols"];
 	        this.countries = source["countries"];
 	        this.anonymity = source["anonymity"];
+	        this.maxLatencyMs = source["maxLatencyMs"];
 	        this.aliveOnly = source["aliveOnly"];
 	        this.search = source["search"];
 	    }

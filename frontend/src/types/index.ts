@@ -87,6 +87,7 @@ export interface ResultFilter {
   protocols: string[]
   countries: string[]
   anonymity: string[]
+  maxLatencyMs: number
   aliveOnly: boolean
   search: string
 }

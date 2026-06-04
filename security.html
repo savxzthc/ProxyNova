@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" data-page="security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none';">
+    <meta name="referrer" content="no-referrer">
+    <meta name="description" content="Responsible-use and security guidance for ProxyNova, an open-source proxy checker for authorized validation workflows.">
+    <title>Responsible Use | ProxyNova</title>
+    <link rel="icon" href="build/appicon.png">
+    <link rel="stylesheet" href="assets/site.css">
+    <script src="assets/site.js" defer></script>
+</head>
+<body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+        <nav class="nav-shell" aria-label="Primary navigation">
+            <a class="brand" href="index.html"><span class="brand-mark">PN</span><span>ProxyNova</span></a>
+            <button class="nav-toggle" type="button" aria-controls="site-menu" aria-expanded="false"><span class="sr-only">Open navigation</span><span></span><span></span><span></span></button>
+            <div class="nav-links" id="site-menu">
+                <a href="features.html">Features</a>
+                <a href="download.html">Download</a>
+                <a href="docs.html">Docs</a>
+                <a href="faq.html">FAQ</a>
+                <a href="security.html">Responsible Use</a>
+                <a class="nav-cta" href="https://github.com/savxzthc/ProxyNova" target="_blank" rel="noopener noreferrer">GitHub</a>
+            </div>
+        </nav>
+    </header>
+
+    <main id="main" class="page-main">
+        <section class="page-hero">
+            <p class="eyebrow">Responsible use</p>
+            <h1>Proxy checking is powerful. Keep it authorized.</h1>
+            <p>ProxyNova is intended for developers, researchers, security teams, and network administrators validating lists they are allowed to use.</p>
+        </section>
+
+        <section class="section split-section">
+            <div>
+                <h2>Appropriate use</h2>
+                <ul class="check-list">
+                    <li>Cleaning proxy lists you own or are authorized to test.</li>
+                    <li>Measuring latency, health, and anonymity for internal tooling.</li>
+                    <li>Researching proxy behavior in a lawful lab or approved environment.</li>
+                    <li>Auditing whether a proxy leaks headers or origin information.</li>
+                </ul>
+            </div>
+            <div>
+                <h2>Do not use it for</h2>
+                <ul class="danger-list">
+                    <li>Spam, fraud, account abuse, or credential attacks.</li>
+                    <li>Bypassing access controls or rate limits without permission.</li>
+                    <li>Scraping or automation that violates a service's rules.</li>
+                    <li>Masking traffic for harassment, exploitation, or evasion.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="section docs-content single-column">
+            <article>
+                <h2>Security model</h2>
+                <p>ProxyNova is not an anonymity product. It tests proxies and labels their observed behavior. A working or Elite result does not guarantee privacy, integrity, clean ownership, or safety of the proxy endpoint.</p>
+            </article>
+            <article>
+                <h2>Operational guidance</h2>
+                <p>Treat unknown public proxies as untrusted infrastructure. Do not send secrets, credentials, private traffic, production tokens, or sensitive browsing through random proxy endpoints.</p>
+            </article>
+            <article>
+                <h2>Defensive methodology</h2>
+                <p>For internal validation, keep source lists documented, cap concurrency to avoid accidental service impact, monitor outbound traffic, and preserve logs that explain what was tested and why.</p>
+            </article>
+            <article>
+                <h2>Vulnerability reporting</h2>
+                <p>Report code or packaging vulnerabilities through the GitHub repository so maintainers can triage them with the relevant version, platform, reproduction steps, and impact.</p>
+            </article>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-grid">
+            <div><a class="brand" href="index.html"><span class="brand-mark">PN</span><span>ProxyNova</span></a><p>Fast local proxy checking, scraping, filtering, and export for Windows.</p></div>
+            <div><h2>Product</h2><a href="features.html">Features</a><a href="download.html">Download</a><a href="docs.html">Docs</a></div>
+            <div><h2>Trust</h2><a href="security.html">Responsible Use</a><a href="privacy.html">Privacy</a><a href="faq.html">FAQ</a></div>
+            <div><h2>Source</h2><a href="https://github.com/savxzthc/ProxyNova" target="_blank" rel="noopener noreferrer">GitHub Repository</a><a href="https://github.com/savxzthc/ProxyNova/releases/latest" target="_blank" rel="noopener noreferrer">Latest Release</a></div>
+        </div>
+        <p class="copyright">&copy; 2026 ProxyNova Contributors. Released under the MIT License.</p>
+    </footer>
+</body>
+</html>

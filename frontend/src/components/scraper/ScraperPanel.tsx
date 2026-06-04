@@ -2,19 +2,24 @@ import { useEffect, useState } from 'react'
 import { useAppStore } from '../../store/appStore'
 import { GetSources, StartScraping, StopScraping, SaveSources, ExportProxyList, OpenSaveDialog } from '../../../wailsjs/go/main/App'
 import SourceGrid from './SourceGrid'
-import { IconWorldDownload, IconPlus, IconArrowRight, IconDownload, IconX, IconCheck } from '@tabler/icons-react'
+import { IconWorldDownload, IconArrowRight, IconDownload, IconCheck } from '@tabler/icons-react'
 import type { ScrapeSource } from '../../types'
 
-function AddSourceForm({ onAdd, onCancel }: { onAdd: (src: ScrapeSource) => void; onCancel: () => void }) {
+function AddSourceForm({ onAdd }: { onAdd: (src: ScrapeSource) => void }) {
   const [url, setUrl] = useState('')
   const [name, setName] = useState('')
   const [error, setError] = useState('')
 
   const handleSubmit = () => {
     setError('')
-    if (!url) { setError('URL is required'); return }
+    const cleanURL = url.trim()
+    const cleanName = name.trim()
+    if (!cleanURL) {
+      setError('URL is required')
+      return
+    }
     try {
-      const parsed = new URL(url)
+      const parsed = new URL(cleanURL)
       if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
         setError('Only http:// and https:// URLs are allowed')
         return
@@ -23,42 +28,49 @@ function AddSourceForm({ onAdd, onCancel }: { onAdd: (src: ScrapeSource) => void
       setError('Invalid URL')
       return
     }
+
     onAdd({
-      id: `custom-${Date.now()}`,
-      name: name.trim() || url,
-      url: url.trim(),
+      id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      name: cleanName || cleanURL,
+      url: cleanURL,
       active: true,
       lastScraped: '',
       lastCount: 0,
     })
+    setUrl('')
+    setName('')
   }
 
   return (
-    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[#2a2a2a] bg-[#111] shrink-0">
-      <input
-        autoFocus
-        type="text"
-        placeholder="https://example.com/proxies.txt"
-        value={url}
-        onChange={e => setUrl(e.target.value)}
-        onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-        className="flex-1 bg-[#1c1c1c] border border-[#2a2a2a] rounded px-2.5 py-1 text-xs font-mono text-[#e8e8e8] placeholder-[#444] focus:outline-none focus:border-blue-800"
-      />
-      <input
-        type="text"
-        placeholder="Name (optional)"
-        value={name}
-        onChange={e => setName(e.target.value)}
-        onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-        className="w-36 bg-[#1c1c1c] border border-[#2a2a2a] rounded px-2.5 py-1 text-xs text-[#e8e8e8] placeholder-[#444] focus:outline-none focus:border-blue-800"
-      />
-      {error && <span className="text-xs text-red-400 shrink-0">{error}</span>}
-      <button onClick={handleSubmit} className="p-1 text-green-400 hover:text-green-300 transition-colors">
-        <IconCheck size={14} />
-      </button>
-      <button onClick={onCancel} className="p-1 text-[#555] hover:text-[#888] transition-colors">
-        <IconX size={14} />
-      </button>
+    <div className="rounded-lg border border-[#2a2a2a] bg-surface p-3 shrink-0">
+      <div className="mb-2 text-xs uppercase tracking-wider text-[#555]">Add source</div>
+      <div className="flex flex-col lg:flex-row gap-2">
+        <input
+          type="text"
+          placeholder="Display name"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+          className="lg:w-44 bg-[#1c1c1c] border border-[#2a2a2a] rounded px-2.5 py-1.5 text-xs text-[#e8e8e8] placeholder-[#555] focus:outline-none focus:border-blue-800 transition-colors duration-150"
+        />
+        <input
+          type="text"
+          placeholder="https://example.com/proxies.txt"
+          value={url}
+          onChange={e => setUrl(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+          className="flex-1 bg-[#1c1c1c] border border-[#2a2a2a] rounded px-2.5 py-1.5 text-xs font-mono text-[#e8e8e8] placeholder-[#555] focus:outline-none focus:border-blue-800 transition-colors duration-150"
+        />
+        <button
+          type="button"
+          onClick={handleSubmit}
+          className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-500 text-xs font-medium text-white transition-colors duration-150"
+        >
+          <IconCheck size={13} />
+          Add
+        </button>
+      </div>
+      {error && <div className="mt-2 text-xs text-red-400">{error}</div>}
     </div>
   )
 }
@@ -71,7 +83,6 @@ export default function ScraperPanel() {
     scrapedProxies,
     setActivePanel,
   } = useAppStore()
-  const [showAdd, setShowAdd] = useState(false)
 
   useEffect(() => {
     GetSources().then(setSources)
@@ -88,17 +99,21 @@ export default function ScraperPanel() {
     setScraping(false)
   }
 
-  const handleToggle = async (id: string) => {
-    const updated = sources.map(s => s.id === id ? { ...s, active: !s.active } : s)
+  const saveSources = async (updated: ScrapeSource[]) => {
     setSources(updated)
     await SaveSources(updated as any)
   }
 
+  const handleToggle = async (id: string) => {
+    await saveSources(sources.map(s => s.id === id ? { ...s, active: !s.active } : s))
+  }
+
   const handleAddSource = async (src: ScrapeSource) => {
-    const updated = [...sources, src]
-    setSources(updated)
-    await SaveSources(updated as any)
-    setShowAdd(false)
+    await saveSources([...sources, src])
+  }
+
+  const handleDeleteSource = async (id: string) => {
+    await saveSources(sources.filter(s => s.id !== id))
   }
 
   const handleExport = async () => {
@@ -119,38 +134,25 @@ export default function ScraperPanel() {
         <button
           onClick={isScraping ? handleStop : handleScrapeAll}
           disabled={activeSrcCount === 0}
-          className={`flex items-center gap-2 px-4 py-1.5 rounded text-sm font-medium transition-colors ${
+          className={`flex items-center gap-2 px-4 py-1.5 rounded text-sm font-medium transition-colors duration-150 ${
             isScraping
-              ? 'bg-[#1c1c1c] border border-[#2a2a2a] text-[#888] hover:text-red-400'
-              : 'bg-blue-600 hover:bg-blue-500 text-white'
+              ? 'bg-red-950/40 border border-red-900/70 text-red-300 hover:bg-red-900/50'
+              : 'bg-blue-600 hover:bg-blue-500 text-white shadow-sm shadow-blue-950/40'
           } disabled:opacity-40 disabled:cursor-not-allowed`}
         >
           <IconWorldDownload size={14} />
           {isScraping ? 'Stop scraping' : 'Scrape all active'}
-        </button>
-        <button
-          onClick={() => setShowAdd(v => !v)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#1c1c1c] border border-[#2a2a2a] text-xs text-[#888] hover:text-[#e8e8e8] transition-colors"
-        >
-          <IconPlus size={12} />
-          Add source
         </button>
         <span className="text-xs text-[#555] ml-auto">
           {activeSrcCount} active sources
         </span>
       </div>
 
-      {showAdd && (
-        <AddSourceForm
-          onAdd={handleAddSource}
-          onCancel={() => setShowAdd(false)}
-        />
-      )}
-
       {isScraping && (
-        <div className="px-4 py-2 bg-[#0f1a2a] border-b border-[#1e3a5a] text-xs text-blue-400 shrink-0">
+        <div className="flex items-center gap-2 px-4 py-2 bg-[#0f1a2a] border-b border-[#1e3a5a] text-xs text-blue-400 shrink-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
           Scraped <span className="font-mono">{totalScrapeCount.toLocaleString()}</span> proxies
-          from <span className="font-mono">{doneSources}</span> / <span className="font-mono">{activeSrcCount}</span> sources...
+          from <span className="font-mono">{doneSources}</span> / <span className="font-mono">{activeSrcCount}</span> sources
         </div>
       )}
 
@@ -162,14 +164,14 @@ export default function ScraperPanel() {
           <div className="flex items-center gap-2 ml-auto">
             <button
               onClick={handleExport}
-              className="flex items-center gap-1.5 px-3 py-1 rounded bg-[#1c1c1c] border border-[#2a2a2a] text-xs text-[#888] hover:text-[#e8e8e8] transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1 rounded bg-[#1c1c1c] border border-[#2a2a2a] text-xs text-[#888] hover:text-[#e8e8e8] transition-colors duration-150"
             >
               <IconDownload size={12} />
               Export TXT
             </button>
             <button
               onClick={() => setActivePanel('checker')}
-              className="flex items-center gap-1.5 px-3 py-1 rounded bg-green-700 hover:bg-green-600 text-xs text-white font-medium transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1 rounded bg-green-700 hover:bg-green-600 text-xs text-white font-medium transition-colors duration-150"
             >
               Load into checker
               <IconArrowRight size={12} />
@@ -178,13 +180,15 @@ export default function ScraperPanel() {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <SourceGrid
           sources={sources}
           statuses={scrapeStatuses}
           onToggle={handleToggle}
+          onDelete={handleDeleteSource}
           isScraping={isScraping}
         />
+        <AddSourceForm onAdd={handleAddSource} />
       </div>
     </div>
   )

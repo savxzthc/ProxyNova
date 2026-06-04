@@ -51,20 +51,20 @@ export default function InputArea({ proxies, onChange, externalText }: Props) {
 
   return (
     <div
-      className="relative rounded-lg border border-[#2a2a2a] bg-surface overflow-hidden"
+      className="relative rounded-lg border border-[#2a2a2a] bg-surface overflow-hidden transition-colors duration-150"
       onDrop={handleDrop}
       onDragOver={(e) => e.preventDefault()}
     >
       {proxies.length === 0 && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-2 z-10">
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-2 z-10 text-center">
           <IconShieldOff size={28} className="text-[#555]" />
           <span className="text-sm text-[#555]">Paste proxies here or drop a .txt file</span>
-          <span className="text-xs text-[#444]">Supports ip:port · protocol://ip:port · ip:port:user:pass</span>
+          <span className="text-xs text-[#444]">Supports ip:port, protocol://ip:port, and ip:port:user:pass</span>
         </div>
       )}
       <textarea
         ref={textRef}
-        className="w-full h-40 bg-transparent resize-none p-3 text-xs font-mono text-[#e8e8e8] placeholder-transparent focus:outline-none relative z-20"
+        className="w-full h-40 bg-transparent resize-none p-3 text-xs font-mono text-[#e8e8e8] placeholder-transparent focus:outline-none focus:ring-1 focus:ring-blue-800 relative z-20"
         onChange={handleChange}
         spellCheck={false}
       />
@@ -75,8 +75,9 @@ export default function InputArea({ proxies, onChange, externalText }: Props) {
           ) : 'no proxies'}
         </span>
         <button
+          type="button"
           onClick={handleOpen}
-          className="flex items-center gap-1.5 text-xs text-[#888] hover:text-[#e8e8e8] transition-colors"
+          className="flex items-center gap-1.5 text-xs text-[#888] hover:text-[#e8e8e8] transition-colors duration-150"
         >
           <IconUpload size={12} />
           open file

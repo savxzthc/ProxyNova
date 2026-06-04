@@ -106,7 +106,7 @@ func (a *App) StartChecking(proxyStrings []string, cfg core.CheckConfig) error {
 	if a.realIP == "" {
 		a.realIP = a.fetchRealIP()
 		if a.realIP == "" {
-			runtime.EventsEmit(a.ctx, "checker:warn", "Could not determine real IP — anonymity grading may be inaccurate")
+			runtime.EventsEmit(a.ctx, "checker:warn", "Could not determine real IP - anonymity grading may be inaccurate")
 		}
 	}
 	a.checker.SetRealIP(a.realIP)

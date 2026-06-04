@@ -43,11 +43,12 @@ type Result struct {
 }
 
 type ResultFilter struct {
-	Protocols []string `json:"protocols"`
-	Countries []string `json:"countries"`
-	Anonymity []string `json:"anonymity"`
-	AliveOnly bool     `json:"aliveOnly"`
-	Search    string   `json:"search"`
+	Protocols    []string `json:"protocols"`
+	Countries    []string `json:"countries"`
+	Anonymity    []string `json:"anonymity"`
+	MaxLatencyMs int      `json:"maxLatencyMs"`
+	AliveOnly    bool     `json:"aliveOnly"`
+	Search       string   `json:"search"`
 }
 
 type AppSettings struct {
@@ -322,39 +323,48 @@ func (c *Checker) checkProxy(p Proxy, cfg CheckConfig) Result {
 		Password: p.Password,
 	}
 
-	for _, proto := range protocolsToCheck {
-		info.Protocol = proto
-		var judgeURL string
-		for _, j := range activeJudges {
-			if j.Protocol == "http" || j.Protocol == proto || (proto == "https" && j.Protocol == "https") {
-				judgeURL = j.URL
+	attempts := cfg.RetryCount
+	if attempts < 1 {
+		attempts = 1
+	}
+
+	for attempt := 0; attempt < attempts && !bestResult.Alive; attempt++ {
+		for _, proto := range protocolsToCheck {
+			info.Protocol = proto
+			var judgeURL string
+			for _, j := range activeJudges {
+				if j.Protocol == "http" || j.Protocol == proto || (proto == "https" && j.Protocol == "https") {
+					judgeURL = j.URL
+					break
+				}
+			}
+			if judgeURL == "" {
+				judgeURL = activeJudges[0].URL
+			}
+
+			var cr protocols.CheckResult
+			switch proto {
+			case "http":
+				cr = protocols.CheckHTTP(info, judgeURL, cfg.TimeoutMs, c.realIP)
+			case "https":
+				cr = protocols.CheckHTTPS(info, judgeURL, cfg.TimeoutMs, c.realIP)
+			case "socks4":
+				cr = protocols.CheckSOCKS4(info, judgeURL, cfg.TimeoutMs, c.realIP)
+			case "socks5":
+				cr = protocols.CheckSOCKS5(info, judgeURL, cfg.TimeoutMs, c.realIP)
+			}
+
+			if cr.Alive {
+				bestResult.Alive = true
+				bestResult.LatencyMs = cr.LatencyMs
+				bestResult.Anonymity = cr.Anonymity
+				bestResult.Protocol = proto
+				bestResult.Error = ""
 				break
 			}
-		}
-		if judgeURL == "" {
-			judgeURL = activeJudges[0].URL
-		}
-
-		var cr protocols.CheckResult
-		switch proto {
-		case "http":
-			cr = protocols.CheckHTTP(info, judgeURL, cfg.TimeoutMs, c.realIP)
-		case "https":
-			cr = protocols.CheckHTTPS(info, judgeURL, cfg.TimeoutMs, c.realIP)
-		case "socks4":
-			cr = protocols.CheckSOCKS4(info, judgeURL, cfg.TimeoutMs, c.realIP)
-		case "socks5":
-			cr = protocols.CheckSOCKS5(info, judgeURL, cfg.TimeoutMs, c.realIP)
-		}
-
-		if cr.Alive && (!bestResult.Alive || cr.LatencyMs < bestResult.LatencyMs) {
-			bestResult.Alive = true
-			bestResult.LatencyMs = cr.LatencyMs
-			bestResult.Anonymity = cr.Anonymity
-			bestResult.Protocol = proto
-			bestResult.Error = ""
-		} else if !bestResult.Alive && cr.Error != "" {
-			bestResult.Error = cr.Error
+			if cr.Error != "" {
+				bestResult.Error = cr.Error
+			}
 		}
 	}
 

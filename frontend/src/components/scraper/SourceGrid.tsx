@@ -4,8 +4,32 @@ interface Props {
   sources: ScrapeSource[]
   statuses: Record<string, ScrapeProgress>
   onToggle: (id: string) => void
+  onDelete: (id: string) => void
   isScraping: boolean
 }
+
+const defaultSourceIds = new Set([
+  'speedx-http',
+  'speedx-socks4',
+  'speedx-socks5',
+  'shifty-http',
+  'shifty-socks4',
+  'shifty-socks5',
+  'monosans-http',
+  'monosans-socks4',
+  'monosans-socks5',
+  'hookzof-socks5',
+  'clarketm',
+  'sunny9577',
+  'proxylist-http',
+  'proxylist-socks4',
+  'proxylist-socks5',
+  'proxyscrape-http',
+  'proxyscrape-socks4',
+  'proxyscrape-socks5',
+  'freeproxylists',
+  'free-proxy-list',
+])
 
 function relativeTime(iso: string) {
   if (!iso || iso === '0001-01-01T00:00:00Z') return 'Never'
@@ -19,14 +43,15 @@ function relativeTime(iso: string) {
   return `${Math.floor(h / 24)}d ago`
 }
 
-export default function SourceGrid({ sources, statuses, onToggle, isScraping }: Props) {
+export default function SourceGrid({ sources, statuses, onToggle, onDelete, isScraping }: Props) {
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-3">
       {sources.map((src) => {
         const st = statuses[src.id]
         const isActive = isScraping && !st?.done
         const isDone = !!st?.done && !st?.error
         const isError = !!st?.error
+        const isCustom = !defaultSourceIds.has(src.id)
 
         const borderCls = isActive
           ? 'pulse-border border-blue-800'
@@ -51,27 +76,47 @@ export default function SourceGrid({ sources, statuses, onToggle, isScraping }: 
         return (
           <div
             key={src.id}
-            className={`rounded-lg border p-3 bg-surface transition-all ${borderCls}`}
+            className={`rounded-lg border p-3 bg-surface transition-colors duration-150 ${borderCls}`}
           >
             <div className="flex items-start justify-between gap-2 mb-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotCls}`} />
-                <span className="text-xs text-[#e8e8e8] truncate">{src.name}</span>
+              <div className="flex items-start gap-2 min-w-0">
+                <span className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${dotCls}`} />
+                <div className="min-w-0">
+                  <span className="block text-xs text-[#e8e8e8] truncate">{src.name}</span>
+                  {isCustom && <span className="block text-[10px] uppercase tracking-wider text-blue-500">Custom</span>}
+                </div>
               </div>
-              <button
-                onClick={() => onToggle(src.id)}
-                className={`w-7 h-4 rounded-full shrink-0 transition-colors ${
-                  src.active ? 'bg-blue-600' : 'bg-[#333]'
-                }`}
-              >
-                <span
-                  className={`block w-3 h-3 rounded-full bg-white shadow transition-transform ${
-                    src.active ? 'translate-x-3.5' : 'translate-x-0.5'
+              <div className="flex items-center gap-2 shrink-0">
+                {isCustom && (
+                  <button
+                    type="button"
+                    onClick={() => onDelete(src.id)}
+                    disabled={isScraping}
+                    className="grid h-6 w-6 place-items-center rounded border border-[#2a2a2a] text-[#666] hover:border-red-900 hover:text-red-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-150"
+                    title="Delete custom source"
+                    aria-label={`Delete ${src.name}`}
+                  >
+                    x
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => onToggle(src.id)}
+                  className={`w-7 h-4 rounded-full shrink-0 transition-colors duration-150 ${
+                    src.active ? 'bg-blue-600' : 'bg-[#333]'
                   }`}
-                />
-              </button>
+                  aria-label={`${src.active ? 'Disable' : 'Enable'} ${src.name}`}
+                >
+                  <span
+                    className={`block w-3 h-3 rounded-full bg-white shadow transition-transform ${
+                      src.active ? 'translate-x-3.5' : 'translate-x-0.5'
+                    }`}
+                  />
+                </button>
+              </div>
             </div>
             <div className="space-y-0.5 text-[10px] text-[#555]">
+              <div className="truncate font-mono text-[#666]" title={src.url}>{src.url}</div>
               <div>
                 Last scraped: <span className="text-[#888]">{relativeTime(src.lastScraped)}</span>
               </div>
@@ -82,7 +127,7 @@ export default function SourceGrid({ sources, statuses, onToggle, isScraping }: 
                     ? st.count.toLocaleString()
                     : src.lastCount > 0
                     ? src.lastCount.toLocaleString()
-                    : '—'}
+                    : '-'}
                 </span>
               </div>
               {isError && (

@@ -139,7 +139,7 @@ func exportJSON(results []Result, f *os.File) error {
 }
 
 func FilterResults(results []Result, filter ResultFilter) []Result {
-	if filter.AliveOnly == false && len(filter.Protocols) == 0 && len(filter.Countries) == 0 && len(filter.Anonymity) == 0 && filter.Search == "" {
+	if filter.AliveOnly == false && len(filter.Protocols) == 0 && len(filter.Countries) == 0 && len(filter.Anonymity) == 0 && filter.MaxLatencyMs <= 0 && filter.Search == "" {
 		return results
 	}
 
@@ -160,6 +160,9 @@ func FilterResults(results []Result, filter ResultFilter) []Result {
 			continue
 		}
 		if len(anonSet) > 0 && !anonSet[r.Anonymity] {
+			continue
+		}
+		if filter.MaxLatencyMs > 0 && (!r.Alive || r.LatencyMs > int64(filter.MaxLatencyMs)) {
 			continue
 		}
 		if search != "" {

@@ -28,26 +28,30 @@ export default function SettingsPanel() {
   return (
     <div className="flex flex-col h-full overflow-y-auto">
       <div className="max-w-xl p-6 space-y-8">
-
         <section className="space-y-4">
           <h3 className="text-xs font-medium text-[#555] uppercase tracking-wider">Checking defaults</h3>
           <div className="space-y-4">
             <div>
               <div className="flex justify-between text-xs text-[#888] mb-1.5">
                 <span>Default threads</span>
-                <span className="font-mono">{local.defaultThreads}</span>
+                <span className="font-mono">{local.defaultThreads.toLocaleString()}</span>
               </div>
-              <input type="range" min={10} max={2000} step={10}
+              <input
+                type="range"
+                min={10}
+                max={2000}
+                step={10}
                 value={local.defaultThreads}
                 onChange={e => set('defaultThreads', Number(e.target.value))}
-                className="w-full h-1 accent-blue-500" />
+                className="w-full h-1 accent-blue-500 focus:outline-none"
+              />
             </div>
             <div>
               <label className="text-xs text-[#888] block mb-1.5">Default timeout</label>
               <select
                 value={local.defaultTimeout}
                 onChange={e => set('defaultTimeout', Number(e.target.value))}
-                className="bg-[#1c1c1c] border border-[#2a2a2a] rounded px-3 py-1.5 text-xs text-[#e8e8e8] focus:outline-none focus:border-blue-800"
+                className="bg-[#1c1c1c] border border-[#2a2a2a] rounded px-3 py-1.5 text-xs text-[#e8e8e8] focus:outline-none focus:border-blue-800 transition-colors duration-150"
               >
                 {[2000, 5000, 10000, 20000, 30000].map(v => (
                   <option key={v} value={v}>{v / 1000}s</option>
@@ -67,10 +71,12 @@ export default function SettingsPanel() {
               <div key={key} className="flex items-center justify-between">
                 <span className="text-sm text-[#888]">{label}</span>
                 <button
+                  type="button"
                   onClick={() => set(key, !local[key])}
-                  className={`w-8 h-4 rounded-full transition-colors ${local[key] ? 'bg-blue-600' : 'bg-[#333]'}`}
+                  className={`w-8 h-4 rounded-full transition-colors duration-150 ${local[key] ? 'bg-blue-600' : 'bg-[#333]'}`}
+                  aria-label={label}
                 >
-                  <span className={`block w-3 h-3 rounded-full bg-white shadow transition-transform ${local[key] ? 'translate-x-4.5' : 'translate-x-0.5'}`} />
+                  <span className={`block w-3 h-3 rounded-full bg-white shadow transition-transform ${local[key] ? 'translate-x-4' : 'translate-x-0.5'}`} />
                 </button>
               </div>
             ))}
@@ -85,7 +91,7 @@ export default function SettingsPanel() {
               <select
                 value={local.exportFormat}
                 onChange={e => set('exportFormat', e.target.value)}
-                className="bg-[#1c1c1c] border border-[#2a2a2a] rounded px-3 py-1.5 text-xs text-[#e8e8e8] focus:outline-none focus:border-blue-800"
+                className="bg-[#1c1c1c] border border-[#2a2a2a] rounded px-3 py-1.5 text-xs text-[#e8e8e8] focus:outline-none focus:border-blue-800 transition-colors duration-150"
               >
                 <option value="txt">TXT</option>
                 <option value="csv">CSV</option>
@@ -97,7 +103,7 @@ export default function SettingsPanel() {
               <select
                 value={local.txtFormat}
                 onChange={e => set('txtFormat', e.target.value)}
-                className="bg-[#1c1c1c] border border-[#2a2a2a] rounded px-3 py-1.5 text-xs text-[#e8e8e8] focus:outline-none focus:border-blue-800"
+                className="bg-[#1c1c1c] border border-[#2a2a2a] rounded px-3 py-1.5 text-xs text-[#e8e8e8] focus:outline-none focus:border-blue-800 transition-colors duration-150"
               >
                 <option value="host:port">ip:port</option>
                 <option value="protocol://host:port">protocol://ip:port</option>
@@ -114,18 +120,19 @@ export default function SettingsPanel() {
             <div>
               GeoLite2:{' '}
               <span className="text-[#888]">
-                Bundled — replace <code className="font-mono text-[#666]">files/GeoLite2-City.mmdb</code> for updates
+                Bundled - replace <code className="font-mono text-[#666]">files/GeoLite2-City.mmdb</code> for updates
               </span>
             </div>
           </div>
         </section>
 
         <button
+          type="button"
           onClick={save}
-          className={`px-5 py-2 rounded text-sm font-medium transition-colors ${
+          className={`px-5 py-2 rounded text-sm font-semibold transition-colors duration-150 ${
             saved
               ? 'bg-green-700 text-green-100'
-              : 'bg-blue-600 hover:bg-blue-500 text-white'
+              : 'bg-blue-600 hover:bg-blue-500 text-white shadow-sm shadow-blue-950/40'
           }`}
         >
           {saved ? 'Saved' : 'Save settings'}

@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -13,30 +11,54 @@ html, body, #root {
   padding: 0;
   background: #0d0d0d;
   color: #e8e8e8;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   user-select: none;
 }
 
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #0d0d0d; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: #444; }
 
 input, textarea { user-select: text; }
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  border-color: rgb(30 64 175);
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+input[type="range"] {
+  accent-color: #2563eb;
+}
 
 @keyframes flash {
   0% { color: #ffffff; }
   100% { color: inherit; }
 }
+
 @keyframes rowIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
 }
+
 .flash { animation: flash 400ms ease-out forwards; }
 .row-in { animation: rowIn 150ms ease-out forwards; }
+
 @keyframes pulse-border {
   0%, 100% { border-color: rgb(29 78 216); }
   50% { border-color: rgb(96 165 250); }
 }
+
 .pulse-border { animation: pulse-border 1.5s ease-in-out infinite; }

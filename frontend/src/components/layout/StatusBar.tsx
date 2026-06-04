@@ -1,20 +1,23 @@
 import { useAppStore } from '../../store/appStore'
 
 export default function StatusBar() {
-  const { myIP, isChecking, isScraping, results } = useAppStore()
+  const { myIP, isChecking, isScraping, results, progress } = useAppStore()
 
   const status = isChecking ? 'checking' : isScraping ? 'scraping' : 'idle'
-  const statusColor =
-    status === 'idle' ? 'text-[#555]' : 'text-blue-400'
+  const statusColor = status === 'idle' ? 'text-[#555]' : 'text-blue-400'
+  const rate = progress?.ratePerSec || 0
 
   return (
     <div className="flex items-center justify-between h-7 px-4 bg-surface border-t border-[#2a2a2a] shrink-0 text-[11px]">
       <div className="flex items-center gap-4">
         <span className="text-[#555]">
-          IP: <span className="font-mono text-[#888]">{myIP || '—'}</span>
+          IP: <span className="font-mono text-[#888]">{myIP || '-'}</span>
         </span>
         <span className="text-[#555]">
           Results: <span className="font-mono text-[#888]">{results.length.toLocaleString()}</span>
+        </span>
+        <span className="text-[#555]">
+          Rate: <span className="font-mono text-[#888]">{rate.toFixed(0)}/s</span>
         </span>
       </div>
       <div className={`flex items-center gap-1.5 ${statusColor}`}>

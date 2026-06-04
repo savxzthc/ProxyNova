@@ -46,7 +46,7 @@ export default function CheckerPanel() {
       protocols,
       judges,
       shuffle: false,
-      retryCount: 0,
+      retryCount: 1,
     } as any)
   }, [proxies, threads, timeout, protocols, judges, setCheckerWarning])
 
